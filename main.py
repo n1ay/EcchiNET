@@ -9,8 +9,8 @@ import time
 import av
 from matplotlib import pyplot as plt
 
-epochs = 15
-batch_size = 10
+epochs = 10
+batch_size = 1
 
 FPS = 4
 backward_time_step_seconds = 1
@@ -39,10 +39,44 @@ def preprocess_lstm_context(data):
     return np.asarray(context_data)
 
 
+def generate_ground_truth(source_fps, preproc_fps, preproc_frames, source_marked):
+    values = np.full(shape=(1, preproc_frames), fill_value=0)[0]
+    preproc_duration = preproc_frames / preproc_fps
+
+    # preproc_duration is also source_duration
+    source_frames = preproc_duration * source_fps
+    for time_range in source_marked:
+        source_from = time_range[0] / preproc_duration * source_frames
+        source_to = time_range[1] / preproc_duration * source_frames
+        preproc_from = round(source_from * preproc_fps / source_fps)
+        preproc_to = round(source_to * preproc_fps / source_fps)
+        values[preproc_from:preproc_to] = 1
+
+    return values
+
+
+def generate_time_frames_from_binary_vec(preproc_fps, binary_vec):
+    time_frames = []
+    for i in range(binary_vec.shape[0]):
+        if i + 1 < binary_vec.shape[0] and binary_vec[i] == 0 and binary_vec[i + 1] == 1:
+            preproc_from = i + 1
+        elif ((i + 1 < binary_vec.shape[0] and binary_vec[i] == 1 and binary_vec[i + 1] == 0)
+              or (i + 1 >= binary_vec.shape[0] and binary_vec[i] == 1)):
+            preproc_to = i
+            source_from = round(preproc_from / preproc_fps)
+            source_to = round(preproc_to / preproc_fps)
+            time_frames.append((source_from, source_to))
+
+    return time_frames
+
+
 def main():
     # CLI parser
     parser = argparse.ArgumentParser(description='EcchiNET.')
     parser.add_argument('-i', '--input', help='Input video name', required=True)
+    parser.add_argument('-p', '--predict', action="store_true", help='Predict instead of training', default=False,
+                        required=False)
+    parser.add_argument('-s', '--save_weights', action="store_true", help='Save weights', default=False, required=False)
     args = parser.parse_args()
     video_filename = args.input
 
@@ -56,7 +90,9 @@ def main():
           'x', video_stream.codec_context.format.height, 'frames:', video_stream.frames)
 
     video_data = np.asarray([frame.to_rgb().to_ndarray() for frame in container.decode(video=0)])
-    video_context_data = preprocess_lstm_context(video_data)
+    # video_context_data = preprocess_lstm_context(video_data)
+
+    ground_truth = generate_ground_truth(24, FPS, video_stream.frames, [(32, 47), (93, 110), (131, 137), (143, 156)])
 
     data_generator = ImageDataGenerator(
         featurewise_center=True,
@@ -68,19 +104,26 @@ def main():
     )
 
     model = Sequential([
-        TimeDistributed(Conv2D(input_shape=(frames_per_sample, 180, 240, 1), filters=16, activation='relu', kernel_size=3,
-                               padding='valid', strides=(1, 1), data_format='channels_last')),
-        TimeDistributed(MaxPooling2D(pool_size=(2, 2), strides=(1, 1), padding='valid', data_format='channels_last')),
-        TimeDistributed(Flatten()),
-        LSTM(units=64, recurrent_dropout=0.25),
+        Conv2D(input_shape=(180, 240, 3), filters=32, activation='relu', kernel_size=5,
+               padding='valid', strides=(1, 1), data_format='channels_last'),
+        MaxPooling2D(pool_size=(2, 2), strides=(1, 1), padding='valid', data_format='channels_last'),
+        Flatten(),
         Dense(units=1, activation='sigmoid')
     ])
 
     model.compile(optimizer='adam', loss='binary_crossentropy')
-    history = model.fit(video_context_data, np.full(shape=(1, video_stream.frames), fill_value=1)[0])
 
-    print(model.output_shape)
+    do_predict = args.predict
+    if do_predict:
+        model.load_weights('weights.bin')
+        predictions = model.predict(video_data)
+        time_frames = generate_time_frames_from_binary_vec(FPS, predictions)
+        print(time_frames)
 
+    else:
+        history = model.fit(video_data, ground_truth, batch_size=batch_size, epochs=epochs, shuffle=True)
+        if args.save_weights:
+            model.save_weights('weights.bin')
     print('おはようございます！')
 
 

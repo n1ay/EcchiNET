@@ -4,3 +4,5 @@
 # Do not include data
 data/
 
+# Skip weights
+weights.bin
