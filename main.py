@@ -10,11 +10,15 @@ import av
 from matplotlib import pyplot as plt
 
 epochs = 10
-batch_size = 1
+batch_size = 5
+weights_filename = 'weights.bin'
 
-FPS = 4
-backward_time_step_seconds = 1
-forward_time_step_seconds = 1
+img_shape = (144, 256, 1)
+FPS = 3
+SOURCE_FPS = 24
+MAX_PIXEL_VALUE = 255
+backward_time_step_seconds = 10
+forward_time_step_seconds = 0
 backward_time_step = backward_time_step_seconds * FPS
 forward_time_step = forward_time_step_seconds * FPS
 frames_per_sample = backward_time_step + 1 + forward_time_step
@@ -89,10 +93,10 @@ def main():
     print('video stream res:', video_stream.codec_context.format.width,
           'x', video_stream.codec_context.format.height, 'frames:', video_stream.frames)
 
-    video_data = np.asarray([frame.to_rgb().to_ndarray() for frame in container.decode(video=0)])
-    # video_context_data = preprocess_lstm_context(video_data)
+    video_data = np.asarray([np.reshape(frame.to_ndarray(format='gray'), newshape=img_shape) for frame in container.decode(video=0)]) / MAX_PIXEL_VALUE
+    #video_context_data = preprocess_lstm_context(video_data)
 
-    ground_truth = generate_ground_truth(24, FPS, video_stream.frames, [(32, 47), (93, 110), (131, 137), (143, 156)])
+    ground_truth = generate_ground_truth(SOURCE_FPS, FPS, video_stream.frames, [(32, 47), (93, 110), (131, 137), (143, 156)])
 
     data_generator = ImageDataGenerator(
         featurewise_center=True,
@@ -102,28 +106,32 @@ def main():
         height_shift_range=0.4,
         horizontal_flip=True
     )
+    data_generator.fit(video_data)
 
     model = Sequential([
-        Conv2D(input_shape=(180, 240, 3), filters=32, activation='relu', kernel_size=5,
-               padding='valid', strides=(1, 1), data_format='channels_last'),
+        Conv2D(input_shape=(144, 256, 1), filters=16, activation='relu', kernel_size=5,
+               padding='valid', strides=(2, 2), data_format='channels_last'),
         MaxPooling2D(pool_size=(2, 2), strides=(1, 1), padding='valid', data_format='channels_last'),
         Flatten(),
+        Dense(units=512, activation='relu'),
+        Dense(units=256, activation='relu'),
         Dense(units=1, activation='sigmoid')
     ])
 
-    model.compile(optimizer='adam', loss='binary_crossentropy')
+    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
     do_predict = args.predict
     if do_predict:
-        model.load_weights('weights.bin')
+        model.load_weights(weights_filename)
         predictions = model.predict(video_data)
         time_frames = generate_time_frames_from_binary_vec(FPS, predictions)
         print(time_frames)
 
     else:
-        history = model.fit(video_data, ground_truth, batch_size=batch_size, epochs=epochs, shuffle=True)
+        history = model.fit_generator(data_generator.flow(video_data, ground_truth, batch_size=batch_size),
+                                      epochs=epochs, shuffle=True)
         if args.save_weights:
-            model.save_weights('weights.bin')
+            model.save_weights(weights_filename)
     print('おはようございます！')
 
 
