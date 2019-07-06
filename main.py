@@ -98,8 +98,12 @@ def ffmpeg_extract_video_parts(input_filename, time_frames, output_filename):
         time_from = max(time_from, 0)
         duration = time_frame[1] + VIDEO_PADDING_TIME - time_frame[0]
         video_filename = "tmp.vid." + (str(video_index) if video_index > 9 else "0" + str(video_index)) + ".mp4"
-        ffmpeg_extract_video_part(input_filename, time_from, duration, output_filename)
+        ffmpeg_extract_video_part(input_filename, time_from, duration, video_filename)
         videos.append(video_filename)
+        video_index += 1
+
+    subprocess.run(["./ffmpeg_concat.sh", output_filename])
+    return videos
 
 def ffmpeg_extract_video_part(input_filename, time_from, duration, output_filename):
     subprocess.run(["ffmpeg",
@@ -171,7 +175,9 @@ def main():
         predictions = model.predict(video_data)
         time_frames = generate_time_frames_from_binary_vec(FPS, predictions)
         print(time_frames)
-        ffmpeg_extract_video_parts(video_filename, time_frames, OUTPUT_FILENAME)
+        videos = ffmpeg_extract_video_parts(video_filename, time_frames, OUTPUT_FILENAME)
+        for video in videos:
+            subprocess.run(["rm", video])
 
     else:
         history = model.fit(video_data, ground_truth, batch_size=batch_size,
