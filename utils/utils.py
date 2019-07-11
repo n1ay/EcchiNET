@@ -4,7 +4,7 @@ import subprocess
 from functools import reduce
 
 
-def preprocess_lstm_context(data, backward_time_step, forward_time_step):
+def preprocess_lstm_context(data: np.array, backward_time_step: int, forward_time_step: int):
     context_data = []
     for i in range(data.shape[0]):
         frame_context = []
