@@ -6,3 +6,10 @@ data/
 
 # Skip weights
 weights.bin
+
+# mp4
+*.mp4
+
+# python cache
+__pycache__/
+*.pyc

@@ -4,12 +4,11 @@ import numpy as np
 from keras.layers import LSTM, Dense, Conv2D, MaxPooling2D, TimeDistributed, Flatten
 from keras.models import Sequential
 from keras_preprocessing.image import ImageDataGenerator
-# from sklearn.preprocessing import LabelEncoder
 import time
 import av
 from matplotlib import pyplot as plt
 import subprocess
-import datetime
+from utils import utils
 
 epochs = 10
 batch_size = 5
@@ -31,88 +30,6 @@ forward_time_step = forward_time_step_seconds * FPS
 frames_per_sample = backward_time_step + 1 + forward_time_step
 
 
-def preprocess_lstm_context(data):
-    context_data = []
-    for i in range(data.shape[0]):
-        frame_context = []
-        for j in range(backward_time_step, 0, -1):
-            if i < j:
-                frame_context.append(data[0])
-            else:
-                frame_context.append(data[i - j])
-        frame_context.append(data[i])
-        for j in range(1, forward_time_step + 1):
-            if i + j > data.shape[0] - 1:
-                frame_context.append(data[-1])
-            else:
-                frame_context.append(data[i + j])
-        context_data.append(np.asarray(frame_context))
-    return np.asarray(context_data)
-
-
-def generate_ground_truth_from_time_frames(source_fps, preproc_fps, preproc_frames, source_marked):
-    values = np.full(shape=(1, preproc_frames), fill_value=0)[0]
-    preproc_duration = preproc_frames / preproc_fps
-
-    # preproc_duration is also source_duration
-    source_frames = preproc_duration * source_fps
-    for time_range in source_marked:
-        source_from = time_range[0] / preproc_duration * source_frames
-        source_to = time_range[1] / preproc_duration * source_frames
-        preproc_from = round(source_from * preproc_fps / source_fps)
-        preproc_to = round(source_to * preproc_fps / source_fps)
-        values[preproc_from:preproc_to + 1] = 1
-
-    return values
-
-
-def generate_ground_truth_from_frames(preproc_frames, source_marked):
-    values = np.full(shape=(1, preproc_frames), fill_value=0)[0]
-    for frames in source_marked:
-        frame_from = frames[0]
-        frame_to = frames[1]
-        values[frame_from:frame_to + 1] = 1
-
-    return values
-
-
-def generate_time_frames_from_binary_vec(preproc_fps, binary_vec):
-    time_frames = []
-    for i in range(binary_vec.shape[0]):
-        if i + 1 < binary_vec.shape[0] and binary_vec[i] < POSITIVE_THRESHOLD <= binary_vec[i + 1]:
-            preproc_from = i + 1
-        elif ((i + 1 < binary_vec.shape[0] and binary_vec[i] >= POSITIVE_THRESHOLD > binary_vec[i + 1])
-              or (i + 1 >= binary_vec.shape[0] and binary_vec[i] >= POSITIVE_THRESHOLD)):
-            preproc_to = i
-            source_from = round(preproc_from / preproc_fps)
-            source_to = round(preproc_to / preproc_fps)
-            time_frames.append((source_from, source_to))
-
-    return time_frames
-
-def ffmpeg_extract_video_parts(input_filename, time_frames, output_filename):
-    videos = []
-    video_index = 0
-    for time_frame in time_frames:
-        time_from = time_frame[0] - VIDEO_PADDING_TIME
-        time_from = max(time_from, 0)
-        duration = time_frame[1] + VIDEO_PADDING_TIME - time_frame[0]
-        video_filename = "tmp.vid." + (str(video_index) if video_index > 9 else "0" + str(video_index)) + ".mp4"
-        ffmpeg_extract_video_part(input_filename, time_from, duration, video_filename)
-        videos.append(video_filename)
-        video_index += 1
-
-    subprocess.run(["./ffmpeg_concat.sh", output_filename])
-    return videos
-
-def ffmpeg_extract_video_part(input_filename, time_from, duration, output_filename):
-    subprocess.run(["ffmpeg",
-                    "-ss", str(datetime.timedelta(seconds=time_from)),
-                    "-i", input_filename,
-                    "-t", str(duration),
-                    "-vcodec", "copy",
-                    "-acodec", "copy",
-                    "-y", output_filename])
 
 
 def main():
@@ -141,12 +58,17 @@ def main():
 
     # ground_truth = generate_ground_truth_from_time_frames(SOURCE_FPS, FPS, video_stream.frames, [(32, 47), (93, 110), (131, 137), (143, 156)])
 
-    ground_truth = generate_ground_truth_from_frames(video_stream.frames,
+    ground_truth = utils.generate_ground_truth_from_frames(video_stream.frames,
                                                      [(780, 1158), (2239, 2671), (2762, 2944), (3132, 3316),
                                                       (3427, 3538), (3544, 3643), (3649, 3749)])
 
     video_data = video_data[::int(SOURCE_FPS / FPS)]
     ground_truth = ground_truth[::int(SOURCE_FPS / FPS)]
+
+    container.seek(offset=0)
+    audio_data = np.asarray([frame.to_ndarray() for frame in container.decode(audio=0)])
+    audio_data_newshape = (video_data.shape[0], int(audio_data.size / (video_data.shape[0] * 2 * audio_data.shape[2])), 2, audio_data.shape[2])
+    audio_data = utils.reshape_prune_extra(audio_data, dst_shape=audio_data_newshape)
 
     data_generator = ImageDataGenerator(
         featurewise_center=True,
@@ -173,9 +95,9 @@ def main():
     if do_predict:
         model.load_weights(WEIGHTS_FILENAME)
         predictions = model.predict(video_data)
-        time_frames = generate_time_frames_from_binary_vec(FPS, predictions)
+        time_frames = utils.generate_time_frames_from_binary_vec(FPS, predictions, POSITIVE_THRESHOLD)
         print(time_frames)
-        videos = ffmpeg_extract_video_parts(video_filename, time_frames, OUTPUT_FILENAME)
+        videos = utils.ffmpeg_extract_video_parts(video_filename, time_frames, OUTPUT_FILENAME, VIDEO_PADDING_TIME)
         for video in videos:
             subprocess.run(["rm", video])
 
