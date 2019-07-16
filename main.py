@@ -12,7 +12,8 @@ from utils import utils
 
 epochs = 10
 batch_size = 5
-WEIGHTS_FILENAME = 'weights.bin'
+WEIGHTS_VIDEO_FILENAME = 'weights_video.bin'
+WEIGHTS_AUDIO_FILENAME = 'weights_audio.bin'
 
 IMG_SHAPE = (144, 256, 1)
 FPS = 3
@@ -28,8 +29,6 @@ forward_time_step_seconds = 0
 backward_time_step = backward_time_step_seconds * FPS
 forward_time_step = forward_time_step_seconds * FPS
 frames_per_sample = backward_time_step + 1 + forward_time_step
-
-
 
 
 def main():
@@ -59,15 +58,15 @@ def main():
     # ground_truth = generate_ground_truth_from_time_frames(SOURCE_FPS, FPS, video_stream.frames, [(32, 47), (93, 110), (131, 137), (143, 156)])
 
     ground_truth = utils.generate_ground_truth_from_frames(video_stream.frames,
-                                                     [(780, 1158), (2239, 2671), (2762, 2944), (3132, 3316),
-                                                      (3427, 3538), (3544, 3643), (3649, 3749)])
+                                                           [(780, 1158), (2239, 2671), (2762, 2944), (3132, 3316),
+                                                            (3427, 3538), (3544, 3643), (3649, 3749)])
 
     video_data = video_data[::int(SOURCE_FPS / FPS)]
     ground_truth = ground_truth[::int(SOURCE_FPS / FPS)]
 
     container.seek(offset=0)
     audio_data = np.asarray([frame.to_ndarray() for frame in container.decode(audio=0)])
-    audio_data_newshape = (video_data.shape[0], int(audio_data.size / (video_data.shape[0] * 2 * audio_data.shape[2])), 2, audio_data.shape[2])
+    audio_data_newshape = (video_data.shape[0], int(audio_data.size / (video_data.shape[0] * 2 * audio_data.shape[2])), audio_data.shape[2], 2)
     audio_data = utils.reshape_prune_extra(audio_data, dst_shape=audio_data_newshape)
 
     data_generator = ImageDataGenerator(
@@ -80,7 +79,8 @@ def main():
     )
     data_generator.fit(video_data)
 
-    model = Sequential([
+    # video model
+    model_video = Sequential([
         Conv2D(input_shape=(144, 256, 1), filters=16, activation='relu', kernel_size=5,
                padding='valid', strides=(2, 2), data_format='channels_last'),
         MaxPooling2D(pool_size=(2, 2), strides=(1, 1), padding='valid', data_format='channels_last'),
@@ -89,12 +89,26 @@ def main():
         Dense(units=1, activation='sigmoid')
     ])
 
-    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+    model_video.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+
+    # audio model
+    model_audio = Sequential([
+        Conv2D(input_shape=(audio_data_newshape[1], audio_data_newshape[2], audio_data_newshape[3]), filters=16,
+               activation='relu', kernel_size=5,
+               padding='valid', strides=(2, 2), data_format='channels_last'),
+        MaxPooling2D(pool_size=(2, 2), strides=(1, 1), padding='valid', data_format='channels_last'),
+        Flatten(),
+        Dense(units=128, activation='relu'),
+        Dense(units=1, activation='sigmoid')
+    ])
+
+    model_audio.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
     do_predict = args.predict
     if do_predict:
-        model.load_weights(WEIGHTS_FILENAME)
-        predictions = model.predict(video_data)
+        #model_video.load_weights(WEIGHTS_VIDEO_FILENAME)
+        model_audio.load_weights(WEIGHTS_AUDIO_FILENAME)
+        predictions = model_audio.predict(audio_data)
         time_frames = utils.generate_time_frames_from_binary_vec(FPS, predictions, POSITIVE_THRESHOLD)
         print(time_frames)
         videos = utils.ffmpeg_extract_video_parts(video_filename, time_frames, OUTPUT_FILENAME, VIDEO_PADDING_TIME)
@@ -102,10 +116,13 @@ def main():
             subprocess.run(["rm", video])
 
     else:
-        history = model.fit(video_data, ground_truth, batch_size=batch_size,
-                            epochs=epochs, shuffle=True)
+        #history_video = model_video.fit(video_data, ground_truth, batch_size=batch_size,
+        #                                epochs=epochs, shuffle=True)
+        history_audio = model_audio.fit(audio_data, ground_truth, batch_size=batch_size,
+                                        epochs=epochs, shuffle=True)
         if args.save_weights:
-            model.save_weights(WEIGHTS_FILENAME)
+            #model_video.save_weights(WEIGHTS_VIDEO_FILENAME)
+            model_audio.save_weights(WEIGHTS_AUDIO_FILENAME)
     print('おはようございます！')
 
 

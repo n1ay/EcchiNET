@@ -4,8 +4,8 @@
 # Do not include data
 data/
 
-# Skip weights
-weights.bin
+# Skip weights or other binary files
+*.bin
 
 # mp4
 *.mp4
