@@ -23,25 +23,9 @@ def preprocess_lstm_context(data: np.array, backward_time_step: int, forward_tim
     return np.asarray(context_data)
 
 
-def generate_ground_truth_from_time_frames(source_fps, preproc_fps, preproc_frames, source_marked):
-    values = np.full(shape=(1, preproc_frames), fill_value=0)[0]
-    preproc_duration = preproc_frames / preproc_fps
-
-    # preproc_duration is also source_duration
-    source_frames = preproc_duration * source_fps
-    for time_range in source_marked:
-        source_from = time_range[0] / preproc_duration * source_frames
-        source_to = time_range[1] / preproc_duration * source_frames
-        preproc_from = round(source_from * preproc_fps / source_fps)
-        preproc_to = round(source_to * preproc_fps / source_fps)
-        values[preproc_from:preproc_to + 1] = 1
-
-    return values
-
-
-def generate_ground_truth_from_frames(preproc_frames, source_marked):
-    values = np.full(shape=(1, preproc_frames), fill_value=0)[0]
-    for frames in source_marked:
+def generate_ground_truth_from_frames(preproc_frames_num, true_marked_frame_ranges):
+    values = np.full(shape=(1, preproc_frames_num), fill_value=0)[0]
+    for frames in true_marked_frame_ranges:
         frame_from = frames[0]
         frame_to = frames[1]
         values[frame_from:frame_to + 1] = 1
@@ -51,6 +35,7 @@ def generate_ground_truth_from_frames(preproc_frames, source_marked):
 
 def generate_time_frames_from_binary_vec(preproc_fps, binary_vec, positive_threshold):
     time_frames = []
+    preproc_from = 0
     for i in range(binary_vec.shape[0]):
         if i + 1 < binary_vec.shape[0] and binary_vec[i] < positive_threshold <= binary_vec[i + 1]:
             preproc_from = i + 1
