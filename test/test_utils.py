@@ -167,3 +167,28 @@ class TestUtils(unittest.TestCase):
             output_true = data['output_true']
             assert_array_equal(output_true, utils.generate_time_frames_from_binary_vec(preproc_fps, binary_vec,
                                                                                        positive_threshold))
+
+    def test_reshape_average_prune_extra(self):
+        examples = [
+            {
+                'vector': np.array([0, 1, 0, 1, 0, 1, 0, 1]),
+                'dst_length': 4,
+                'output_true': np.asarray([0.5, 0.5, 0.5, 0.5])
+            },
+            {
+                'vector': np.array([0, 1, 4, 5, 9, 5, 6, 7]),
+                'dst_length': 3,
+                'output_true': np.asarray([0.5, 6, 5.5])
+            },
+            {
+                'vector': np.array([0, 1, 4, 5, 9, 5, 6, 7]),
+                'dst_length': 0,
+                'output_true': np.asarray([])
+            },
+        ]
+
+        for data in examples:
+            vector = data['vector']
+            dst_length = data['dst_length']
+            output_true = data['output_true']
+            assert_array_equal(output_true, utils.reshape_average_prune_extra(vector, dst_length))

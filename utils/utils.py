@@ -80,3 +80,24 @@ def reshape_prune_extra(array, dst_shape):
     dst_elements = reduce(lambda x, y: x * y, dst_shape)
     array_1d = array_1d[0: dst_elements]
     return np.reshape(array_1d, dst_shape)
+
+
+def reshape_average_prune_extra(vector, dst_length):
+    length = vector.shape[0]
+    if dst_length > length:
+        return vector
+
+    if dst_length <= 0:
+        return []
+    avg_group_elements = length / dst_length
+    result = []
+    index = 0
+    accumulated_group_elements = avg_group_elements
+    while len(result) < dst_length:
+        current_group_elements = int(accumulated_group_elements)
+        current_group = vector[index:index + current_group_elements]
+        result.append(np.mean(current_group))
+        index += current_group_elements
+        accumulated_group_elements = accumulated_group_elements - current_group_elements + avg_group_elements
+
+    return np.asarray(result)
