@@ -49,11 +49,12 @@ def generate_time_frames_from_binary_vec(preproc_fps, video_padding_time, binary
             source_to = round(preproc_to / preproc_fps) + video_padding_time
             source_to = min(int((binary_vec.shape[0] - 1) / preproc_fps), source_to)
 
-            if last_time_frame != None and last_time_frame[0] >= source_from and last_time_frame[0] <= source_to:
+            if last_time_frame is not None and last_time_frame[0] <= source_from <= last_time_frame[1]:
                 last_time_frame[1] = max(last_time_frame[1], source_to)
-
             else:
-                time_frames.append((source_from, source_to))
+                time_frame = [source_from, source_to]
+                time_frames.append(time_frame)
+                last_time_frame = time_frame
 
     return time_frames
 

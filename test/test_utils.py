@@ -194,34 +194,34 @@ class TestUtils(unittest.TestCase):
                 'binary_vec': np.asarray([0.5, 0.6, 0.6, 0.4, 0.3, 0.3, 0.4, 0.4, 0.2, 0.7]),
                 'output_true': [(0, 5), (6, 9)]
             },
-            #{
-            #    'preproc_fps': 2,
-            #    'video_padding_time': 3,
-            #    'positive_threshold': 0,
-            #    'binary_vec': np.asarray([]),
-            #    'output_true': []
-            #},
-            #{
-            #    'preproc_fps': 2,
-            #    'video_padding_time': 3,
-            #    'positive_threshold': 0,
-            #    'binary_vec': np.asarray([1, 1, 1, 0, 0, 0, 0, 0, 0, 1]),
-            #    'output_true': [(0, 4)]
-            #},
-            #{
-            #    'preproc_fps': 2,
-            #    'video_padding_time': 3,
-            #    'positive_threshold': 0.5,
-            #    'binary_vec': np.asarray([1, 1, 1, 0, 0, 0, 0, 0, 0, 1]),
-            #    'output_true': [(0, 2), (3, 4)]
-            #},
-            #{
-            #    'preproc_fps': 2,
-            #    'video_padding_time': 3,
-            #    'positive_threshold': 0.5,
-            #    'binary_vec': np.asarray([0.5, 0.6, 0.6, 0.4, 0.3, 0.3, 0.4, 0.4, 0.2, 0.7]),
-            #    'output_true': [(0, 2), (3, 4)]
-            #},
+            {
+                'preproc_fps': 2,
+                'video_padding_time': 3,
+                'positive_threshold': 0,
+                'binary_vec': np.asarray([]),
+                'output_true': []
+            },
+            {
+                'preproc_fps': 2,
+                'video_padding_time': 3,
+                'positive_threshold': 0,
+                'binary_vec': np.asarray([1, 1, 1, 0, 0, 0, 0, 0, 0, 1]),
+                'output_true': [(0, 4)]
+            },
+            {
+                'preproc_fps': 2,
+                'video_padding_time': 3,
+                'positive_threshold': 0.5,
+                'binary_vec': np.asarray([1, 1, 1, 0, 0, 0, 0, 0, 0, 1]),
+                'output_true': [(0, 4)]
+            },
+            {
+               'preproc_fps': 2,
+               'video_padding_time': 3,
+               'positive_threshold': 0.5,
+               'binary_vec': np.asarray([0.5, 0.6, 0.6, 0.4, 0.3, 0.3, 0.4, 0.4, 0.2, 0.7]),
+               'output_true': [(0, 4)]
+            },
         ]
 
         for data in examples:
