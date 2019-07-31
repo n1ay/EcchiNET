@@ -127,9 +127,9 @@ def main():
         predictions_audio_processed = utils.reshape_average_prune_extra(predictions_audio, predictions_video.shape[0])
         predictions_video_audio = np.column_stack([predictions_video, predictions_audio_processed])
         predictions = model_merging.predict(predictions_video_audio)
-        time_frames = utils.generate_time_frames_from_binary_vec(FPS, predictions, POSITIVE_THRESHOLD)
+        time_frames = utils.generate_time_frames_from_binary_vec(FPS, SOURCE_FPS, predictions, POSITIVE_THRESHOLD)
         print(time_frames)
-        videos = utils.ffmpeg_extract_video_parts(video_filename, time_frames, OUTPUT_FILENAME, VIDEO_PADDING_TIME)
+        videos = utils.ffmpeg_extract_video_parts(video_filename, time_frames, OUTPUT_FILENAME)
         for video in videos:
             subprocess.run(["rm", video])
 
