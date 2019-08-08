@@ -2,6 +2,7 @@ import numpy as np
 import datetime
 import subprocess
 from functools import reduce
+import json
 
 
 def preprocess_lstm_context(data: np.array, backward_time_step: int, forward_time_step: int):
@@ -111,3 +112,23 @@ def reshape_average_prune_extra(vector, dst_length):
         accumulated_group_elements = accumulated_group_elements - current_group_elements + avg_group_elements
 
     return np.asarray(result)
+
+
+def load_parse_data_description(data_desc_file):
+    with open(data_desc_file, 'r') as f:
+        data_desc = json.load(f)
+
+        data = []
+        for series in data_desc['series_list']:
+            path = data_desc['data_root_dir'] + '/' + series['series']
+            for episode in series['episodes']:
+                full_path = path + '/' + episode['name']
+                ground_truth = episode['ground_truth']
+                if len(ground_truth) > 0:
+                    episode_data = {}
+                    episode_data['path'] = full_path
+                    episode_data['ground_truth'] = ground_truth
+                    data.append(episode_data)
+
+        return data
+

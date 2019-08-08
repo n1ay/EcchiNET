@@ -1,0 +1,26 @@
+{
+    "data_root_dir": "data",
+    "series_list": [{
+        "series": "Onii-chan_Dakedo_Ai_Sae_Areba_Kankeinai_yo_ne_Specials",
+        "episodes": [{
+                "name": "1.mp4",
+                "ground_truth": [[780, 1158], [2239, 2671], [2762, 2944], [3132, 3316], [3427, 3538], [3544, 3643], [3649, 3749]]
+            }, {
+                "name": "2.mp4",
+                "ground_truth": [[1004, 1784], [2954, 3594], [4729, 5134]]
+            }, {
+                "name": "3.mp4",
+                "ground_truth": [[1654, 1784], [2906, 3384], [4089, 4273], [4659, 4818]]
+            }, {
+                "name": "4.mp4",
+                "ground_truth": []
+            }, {
+                "name": "5.mp4",
+                "ground_truth": []
+            }, {
+                "name": "6.mp4",
+                "ground_truth": []
+            }
+        ]
+    }]
+}

@@ -256,3 +256,29 @@ class TestUtils(unittest.TestCase):
             dst_length = data['dst_length']
             output_true = data['output_true']
             assert_array_equal(output_true, utils.reshape_average_prune_extra(vector, dst_length))
+
+    def test_load_parse_data_description(self):
+        examples = [
+            {
+                'test_filename': 'data/test_data.json',
+                'output_true': [
+                    {
+                        'path': 'data/ecchi_series/1.mp4',
+                        'ground_truth': [[3544, 3643], [3649, 3749]]
+                    },
+                    {
+                        'path': 'data/ecchi_series/2.mp4',
+                        'ground_truth': [[2954, 3594], [4729, 5134]]
+                    },
+                    {
+                        'path': 'data/ecchi_series/3.mp4',
+                        'ground_truth': [[4659, 4818]]
+                    }
+                ]
+            }
+        ]
+
+        for data in examples:
+            test_filename = data['test_filename']
+            output_true = data['output_true']
+            self.assertEqual(output_true, utils.load_parse_data_description(test_filename))
