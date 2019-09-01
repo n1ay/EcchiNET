@@ -132,8 +132,16 @@ def load_parse_data_description(data_desc_file):
         return data
 
 def append_empty_data(video_shape, video_data, video_ground_truth, audio_shape, audio_data, audio_ground_truth, frames):
-    for i in range(frames):
-        video_data = np.append(video_data, np.full(shape=video_shape, fill_value=0))
-        video_ground_truth = np.append(video_ground_truth, 0)
-        audio_data = np.append(audio_data, np.full(shape=audio_shape, fill_value=0))
-        audio_ground_truth = np.append(audio_ground_truth, 0)
+    video_frame_size = video_data[0].size
+    video_data_out_lst = np.array(np.append(video_data, [np.full(shape=video_shape, fill_value=0) for i in range(frames)]))
+    video_data_shape_out = np.append(np.array(video_data_out_lst.size/video_frame_size), np.array(video_shape)).astype(int)
+    video_data_out = np.reshape(video_data_out_lst, video_data_shape_out)
+    video_ground_truth_out = np.append(video_ground_truth, np.full(shape=[frames, 1], fill_value=0))
+
+    audio_frame_size = audio_data[0].size
+    audio_data_out_lst = np.array(np.append(audio_data, [np.full(shape=audio_shape, fill_value=0) for i in range(frames)]))
+    audio_data_shape_out = np.append(np.array(audio_data_out_lst.size/audio_frame_size), np.array(audio_shape)).astype(int)
+    audio_data_out = np.reshape(audio_data_out_lst, audio_data_shape_out)
+    audio_ground_truth_out = np.append(audio_ground_truth, np.full(shape=[frames, 1], fill_value=0))
+
+    return [video_data_out, video_ground_truth_out, audio_data_out, audio_ground_truth_out]

@@ -313,11 +313,8 @@ class TestUtils(unittest.TestCase):
             video_ground_truth_true = data['video_ground_truth_true']
             audio_data_true = data['audio_data_true']
             audio_ground_truth_true = data['audio_ground_truth_true']
-            utils.append_empty_data(video_shape, video_data, video_ground_truth, audio_shape, audio_data, audio_ground_truth, frames)
-
-            print(video_data, video_ground_truth, audio_data, audio_ground_truth)
-
-            assert_array_equal(video_data_true, video_data)
-            assert_array_equal(video_ground_truth_true, video_ground_truth)
-            assert_array_equal(audio_data_true, audio_data)
-            assert_array_equal(audio_ground_truth_true, audio_ground_truth)
+            [video_data_out, video_ground_truth_out, audio_data_out, audio_ground_truth_out] = utils.append_empty_data(video_shape, video_data, video_ground_truth, audio_shape, audio_data, audio_ground_truth, frames)
+            assert_array_equal(video_data_true, video_data_out)
+            assert_array_equal(video_ground_truth_true, video_ground_truth_out)
+            assert_array_equal(audio_data_true, audio_data_out)
+            assert_array_equal(audio_ground_truth_true, audio_ground_truth_out)
