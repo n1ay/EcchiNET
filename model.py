@@ -2,10 +2,12 @@ from keras.layers import LSTM, Dense, Conv1D, Conv2D, MaxPooling1D, MaxPooling2D
 from keras.models import Sequential
 from keras_preprocessing.image import ImageDataGenerator
 
+IMG_SHAPE = [144, 256, 1]
+AUDIO_SHAPE = [2, 1024]
 
 def build_model_video():
     model_video = Sequential([
-        Conv2D(input_shape=[144, 256, 1], filters=16, activation='relu', kernel_size=7,
+        Conv2D(input_shape=IMG_SHAPE, filters=16, activation='relu', kernel_size=7,
                padding='valid', strides=(3, 3), data_format='channels_last'),
         MaxPooling2D(pool_size=(2, 2), strides=(1, 1), padding='valid', data_format='channels_last'),
         Dropout(0.2),
@@ -19,7 +21,7 @@ def build_model_video():
 
 def build_model_audio():
     model_audio = Sequential([
-        Conv1D(input_shape=[2, 1024], filters=16,
+        Conv1D(input_shape=AUDIO_SHAPE, filters=16,
                activation='relu', kernel_size=9,
                padding='valid', strides=4, data_format='channels_first'),
         MaxPooling1D(pool_size=2, strides=1, padding='valid', data_format='channels_first'),

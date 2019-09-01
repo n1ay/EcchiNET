@@ -16,8 +16,8 @@ batch_size = 5
 WEIGHTS_VIDEO_FILENAME = 'weights_video.bin'
 WEIGHTS_AUDIO_FILENAME = 'weights_audio.bin'
 WEIGHTS_MERGING_FILENAME = 'weights_merging.bin'
+DATA_DESCRIPTION_FILENAME = 'data.json'
 
-IMG_SHAPE = [144, 256, 1]
 FPS = 3
 SOURCE_FPS = 24
 MAX_PIXEL_VALUE = 255
@@ -36,39 +36,52 @@ frames_per_sample = backward_time_step + 1 + forward_time_step
 def main():
     # CLI parser
     parser = argparse.ArgumentParser(description='EcchiNET.')
-    parser.add_argument('-i', '--input', help='Input video name', required=True)
+    parser.add_argument('-i', '--input', help='Input video name(s)', required=True, nargs='+')
     parser.add_argument('-p', '--predict', action="store_true", help='Predict instead of training', default=False,
                         required=False)
     parser.add_argument('-s', '--save_weights', action="store_true", help='Save weights', default=False, required=False)
     args = parser.parse_args()
-    video_filename = args.input
 
-    preproc_video_filename = video_filename.split('.mp4')[0] + PREPROC_STR + ".mp4"
-    print('loading file: ', preproc_video_filename)
+    # prepare data
+    data_description_map = {}
+    data_description = utils.load_parse_data_description(DATA_DESCRIPTION_FILENAME)
+    for description_entry in data_description:
+        data_description_map[description_entry['path']] = description_entry['ground_truth']
+    video_data_full = []
+    video_data_ground_truth_full = []
+    audio_data_full = []
+    audio_data_ground_truth_full = []
 
-    container = av.open(preproc_video_filename)
-    video_stream = container.streams.video[0]
-    audio_stream = container.streams.audio[0]
+    for video_filename in args.input:
 
-    print('video stream res:', video_stream.codec_context.format.width,
-          'x', video_stream.codec_context.format.height, 'frames:', video_stream.frames)
+        preproc_video_filename = video_filename.split('.mp4')[0] + PREPROC_STR + ".mp4"
+        print('loading file: ', preproc_video_filename)
 
-    video_data = np.asarray([np.reshape(frame.to_ndarray(format='gray'), newshape=IMG_SHAPE) for frame in
-                             container.decode(video=0)]) / MAX_PIXEL_VALUE
-    # video_context_data = utils.preprocess_lstm_context(video_data)
+        container = av.open(preproc_video_filename)
+        video_stream = container.streams.video[0]
+        audio_stream = container.streams.audio[0]
 
-    video_data_ground_truth = utils.generate_ground_truth_from_frames(video_stream.frames,
-                                                                      [(780, 1158), (2239, 2671), (2762, 2944),
-                                                                       (3132, 3316),
-                                                                       (3427, 3538), (3544, 3643), (3649, 3749)])
+        print('video stream res:', video_stream.codec_context.format.width,
+              'x', video_stream.codec_context.format.height, 'frames:', video_stream.frames)
 
-    video_data = video_data[::int(SOURCE_FPS / FPS)]
-    video_data_ground_truth = video_data_ground_truth[::int(SOURCE_FPS / FPS)]
+        video_data = np.asarray([np.reshape(frame.to_ndarray(format='gray'), newshape=IMG_SHAPE) for frame in
+                                 container.decode(video=0)]) / MAX_PIXEL_VALUE
+        # video_context_data = utils.preprocess_lstm_context(video_data)
 
-    container.seek(offset=0)
-    audio_data = np.asarray([frame.to_ndarray() for frame in container.decode(audio=0)])
-    audio_data_ground_truth = np.asarray([video_data_ground_truth[int(idx * video_data.shape[0] / audio_data.shape[0])]
-                                          for idx in range(audio_data.shape[0])])
+        video_data_ground_truth = utils.generate_ground_truth_from_frames(video_stream.frames, data_description_map[video_filename])
+        video_data = video_data[::int(SOURCE_FPS / FPS)]
+        video_data_ground_truth = video_data_ground_truth[::int(SOURCE_FPS / FPS)]
+
+        container.seek(offset=0)
+        audio_data = np.asarray([frame.to_ndarray() for frame in container.decode(audio=0)])
+        audio_data_ground_truth = np.asarray([video_data_ground_truth[int(idx * video_data.shape[0] / audio_data.shape[0])] for idx in range(audio_data.shape[0])])
+
+        print('audio_data: ', audio_data[0].shape, '\n\n\nvideo_data: ', video_data[0].shape)
+
+        video_data_full.append(video_data)
+        video_data_ground_truth_full.append(video_data_ground_truth)
+        audio_data_full.append(audio_data)
+        audio_data_ground_truth_full.append(audio_data_ground_truth)
 
     # data_generator = build_data_generator()
     # data_generator.fit(video_data)
