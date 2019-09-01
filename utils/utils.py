@@ -4,7 +4,6 @@ import subprocess
 from functools import reduce
 import json
 
-
 def preprocess_lstm_context(data: np.array, backward_time_step: int, forward_time_step: int):
     context_data = []
     for i in range(data.shape[0]):
@@ -132,3 +131,9 @@ def load_parse_data_description(data_desc_file):
 
         return data
 
+def append_empty_data(video_shape, video_data, video_ground_truth, audio_shape, audio_data, audio_ground_truth, frames):
+    for i in range(frames):
+        video_data = np.append(video_data, np.full(shape=video_shape, fill_value=0))
+        video_ground_truth = np.append(video_ground_truth, 0)
+        audio_data = np.append(audio_data, np.full(shape=audio_shape, fill_value=0))
+        audio_ground_truth = np.append(audio_ground_truth, 0)

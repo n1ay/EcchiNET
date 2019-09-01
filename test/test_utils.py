@@ -282,3 +282,42 @@ class TestUtils(unittest.TestCase):
             test_filename = data['test_filename']
             output_true = data['output_true']
             self.assertEqual(output_true, utils.load_parse_data_description(test_filename))
+
+    def test_append_empty_data(self):
+        examples = [
+            {
+                'video_shape': np.array([3, 2]),
+                'video_data': np.array([[[1, 2], [2, 3], [3, 4]]]),
+                'video_ground_truth': np.array([1]),
+                'audio_shape': np.array([2]),
+                'audio_data': np.array([[0, 1], [1, 0]]),
+                'audio_ground_truth': np.array([1, 1]),
+                'frames': 3,
+                'video_data_true': np.array([[[1, 2], [2, 3], [3, 4]], [[0, 0], [0, 0], [0, 0]], [[0, 0], [0, 0], [0, 0]], [[0, 0], [0, 0], [0, 0]]]),
+                'video_ground_truth_true': np.array([1, 0, 0, 0]),
+                'audio_data_true': np.array([[0, 1], [1, 0], [0, 0], [0, 0], [0, 0]]),
+                'audio_ground_truth_true': np.array([1, 1, 0, 0, 0])
+            }
+        ]
+
+        for data in examples:
+            video_shape = data['video_shape']
+            video_data = data['video_data']
+            video_ground_truth = data['video_ground_truth']
+            audio_shape = data['audio_shape']
+            audio_data = data['audio_data']
+            audio_ground_truth = data['audio_ground_truth']
+            frames = data['frames']
+
+            video_data_true = data['video_data_true']
+            video_ground_truth_true = data['video_ground_truth_true']
+            audio_data_true = data['audio_data_true']
+            audio_ground_truth_true = data['audio_ground_truth_true']
+            utils.append_empty_data(video_shape, video_data, video_ground_truth, audio_shape, audio_data, audio_ground_truth, frames)
+
+            print(video_data, video_ground_truth, audio_data, audio_ground_truth)
+
+            assert_array_equal(video_data_true, video_data)
+            assert_array_equal(video_ground_truth_true, video_ground_truth)
+            assert_array_equal(audio_data_true, audio_data)
+            assert_array_equal(audio_ground_truth_true, audio_ground_truth)
