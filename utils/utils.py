@@ -4,6 +4,7 @@ import subprocess
 from functools import reduce
 import json
 
+
 def preprocess_lstm_context(data: np.array, backward_time_step: int, forward_time_step: int):
     context_data = []
     for i in range(data.shape[0]):
@@ -124,24 +125,43 @@ def load_parse_data_description(data_desc_file):
                 full_path = path + '/' + episode['name']
                 ground_truth = episode['ground_truth']
                 if len(ground_truth) > 0:
-                    episode_data = {}
-                    episode_data['path'] = full_path
-                    episode_data['ground_truth'] = ground_truth
+                    episode_data = {'path': full_path, 'ground_truth': ground_truth}
                     data.append(episode_data)
 
         return data
 
-def append_empty_data(video_shape, video_data, video_ground_truth, audio_shape, audio_data, audio_ground_truth, frames):
-    video_frame_size = video_data[0].size
-    video_data_out_lst = np.array(np.append(video_data, [np.full(shape=video_shape, fill_value=0) for i in range(frames)]))
-    video_data_shape_out = np.append(np.array(video_data_out_lst.size/video_frame_size), np.array(video_shape)).astype(int)
-    video_data_out = np.reshape(video_data_out_lst, video_data_shape_out)
+
+def append_empty_data(video_shape: list, video_data: np.array, video_ground_truth: np.array,
+                      audio_shape: list, audio_data: np.array, audio_ground_truth: np.array, frames: int):
+    video_data_out = append_data(video_shape, video_data,
+                                 [np.full(shape=video_shape, fill_value=0) for _ in range(frames)])
     video_ground_truth_out = np.append(video_ground_truth, np.full(shape=[frames, 1], fill_value=0))
 
-    audio_frame_size = audio_data[0].size
-    audio_data_out_lst = np.array(np.append(audio_data, [np.full(shape=audio_shape, fill_value=0) for i in range(frames)]))
-    audio_data_shape_out = np.append(np.array(audio_data_out_lst.size/audio_frame_size), np.array(audio_shape)).astype(int)
-    audio_data_out = np.reshape(audio_data_out_lst, audio_data_shape_out)
+    audio_data_out = append_data(audio_shape, audio_data,
+                                 [np.full(shape=audio_shape, fill_value=0) for _ in range(frames)])
     audio_ground_truth_out = np.append(audio_ground_truth, np.full(shape=[frames, 1], fill_value=0))
 
     return [video_data_out, video_ground_truth_out, audio_data_out, audio_ground_truth_out]
+
+
+def append_data(data_shape: list, current_data: np.array, data_to_be_appended: np.array):
+    data_frame_size = reduce(lambda x, y: x * y, data_shape)
+    data_out_lst = np.array(np.append(current_data, data_to_be_appended))
+    data_shape_out = np.append(np.array(data_out_lst.size / data_frame_size), np.array(data_shape)).astype(int)
+    return np.reshape(data_out_lst, data_shape_out)
+
+
+def get_output_filename(input_filename):
+    if not input_filename.endswith(".mp4"):
+        return input_filename
+    output_filename_build_list = input_filename.split(".mp4")
+    output_filename_build_list[-1] = "_out.mp4"
+    return "".join(output_filename_build_list)
+
+
+def get_preproc_filename(filename):
+    if not filename.endswith(".mp4"):
+        return filename
+    output_filename_build_list = filename.split(".mp4")
+    output_filename_build_list[-1] = "_preproc.mp4"
+    return "".join(output_filename_build_list)
