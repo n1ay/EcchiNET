@@ -216,11 +216,11 @@ class TestUtils(unittest.TestCase):
                 'output_true': [(0, 4)]
             },
             {
-               'preproc_fps': 2,
-               'video_padding_time': 3,
-               'positive_threshold': 0.5,
-               'binary_vec': np.asarray([0.5, 0.6, 0.6, 0.4, 0.3, 0.3, 0.4, 0.4, 0.2, 0.7]),
-               'output_true': [(0, 4)]
+                'preproc_fps': 2,
+                'video_padding_time': 3,
+                'positive_threshold': 0.5,
+                'binary_vec': np.asarray([0.5, 0.6, 0.6, 0.4, 0.3, 0.3, 0.4, 0.4, 0.2, 0.7]),
+                'output_true': [(0, 4)]
             },
         ]
 
@@ -318,3 +318,17 @@ class TestUtils(unittest.TestCase):
             assert_array_equal(video_ground_truth_true, video_ground_truth_out)
             assert_array_equal(audio_data_true, audio_data_out)
             assert_array_equal(audio_ground_truth_true, audio_ground_truth_out)
+
+    def test_get_every_nth_element(self):
+        examples = [
+            {
+                'array': np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]),
+                'n': 2.5,
+                'output_true': [1, 3, 6, 8]
+            }
+        ]
+        for data in examples:
+            array = data['array']
+            n = data['n']
+            output_true = data['output_true']
+            assert_array_equal(output_true, utils.get_every_nth_element(array, n))

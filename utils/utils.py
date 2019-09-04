@@ -3,6 +3,7 @@ import datetime
 import subprocess
 from functools import reduce
 import json
+import math
 
 
 def preprocess_lstm_context(data: np.array, backward_time_step: int, forward_time_step: int):
@@ -165,3 +166,20 @@ def get_preproc_filename(filename):
     output_filename_build_list = filename.split(".mp4")
     output_filename_build_list[-1] = "_preproc.mp4"
     return "".join(output_filename_build_list)
+
+
+def get_every_nth_element(array: np.array, n: float):
+    if n <= 0:
+        raise ValueError('n step has to be positive number')
+
+    if math.floor(n) == n:
+        return array[::n]
+
+    # n is floating number
+    result_array = []
+    current_index = 0
+    while current_index < len(array):
+        result_array.append(array[math.floor(current_index)])
+        current_index += n
+
+    return np.asarray(result_array)

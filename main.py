@@ -72,8 +72,8 @@ def main():
             video_data_ground_truth = utils.generate_ground_truth_from_frames(video_stream.frames,
                                                                               data_description_map[video_filename])
             source_fps = video_stream.codec_context.framerate
-            video_data = video_data[::round(source_fps / FPS)]
-            video_data_ground_truth = video_data_ground_truth[::round(source_fps / FPS)]
+            video_data = utils.get_every_nth_element(video_data, source_fps / FPS)
+            video_data_ground_truth = utils.get_every_nth_element(video_data_ground_truth, source_fps / FPS)
 
             container.seek(offset=0)
             audio_data = np.asarray([frame.to_ndarray() for frame in container.decode(audio=0)])
@@ -126,7 +126,7 @@ def main():
             source_fps = video_stream.codec_context.framerate
             video_data = np.asarray([np.reshape(frame.to_ndarray(format='gray'), newshape=IMG_SHAPE) for frame in
                                      container.decode(video=0)]) / MAX_PIXEL_VALUE
-            video_data = video_data[::round(source_fps / FPS)]
+            video_data = utils.get_every_nth_element(video_data, source_fps / FPS)
             container.seek(offset=0)
             audio_data = np.asarray([frame.to_ndarray() for frame in container.decode(audio=0)])
 
@@ -135,8 +135,7 @@ def main():
             predictions_audio_processed = utils.reshape_average_prune_extra(predictions_audio, predictions_video.shape[0])
             predictions_video_audio = np.column_stack([predictions_video, predictions_audio_processed])
             predictions = model_merging.predict(predictions_video_audio)
-            time_frames = utils.generate_time_frames_from_binary_vec(FPS, VIDEO_PADDING_TIME, predictions,
-                                                                     POSITIVE_THRESHOLD)
+            time_frames = utils.generate_time_frames_from_binary_vec(FPS, VIDEO_PADDING_TIME, predictions, POSITIVE_THRESHOLD)
             print("Found slices:", time_frames)
             videos = utils.ffmpeg_extract_video_parts(input_filename, time_frames, utils.get_output_filename(input_filename))
             for video in videos:
