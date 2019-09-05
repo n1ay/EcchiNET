@@ -7,9 +7,9 @@ AUDIO_SHAPE = [2, 1024]
 
 def build_model_video():
     model_video = Sequential([
-        Conv2D(input_shape=IMG_SHAPE, filters=16, activation='relu', kernel_size=7,
-               padding='valid', strides=(3, 3), data_format='channels_last'),
-        MaxPooling2D(pool_size=(2, 2), strides=(1, 1), padding='valid', data_format='channels_last'),
+        Conv2D(input_shape=IMG_SHAPE, filters=16, activation='relu', kernel_size=9,
+               padding='valid', strides=(4, 4), data_format='channels_last'),
+        MaxPooling2D(pool_size=(3, 3), strides=(1, 1), padding='valid', data_format='channels_last'),
         Dropout(0.2),
         Flatten(),
         Dense(units=128, activation='relu'),
