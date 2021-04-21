@@ -66,7 +66,7 @@ def main():
             print('video stream res:', video_stream.codec_context.format.width,
                   'x', video_stream.codec_context.format.height, 'frames:', video_stream.frames)
 
-            video_data = np.asarray([np.reshape(frame.to_ndarray(format='gray'), newshape=IMG_SHAPE) for frame in
+            video_data = np.asarray([np.reshape(frame.to_ndarray(format=IMG_FORMAT), newshape=IMG_SHAPE) for frame in
                                      container.decode(video=0)]) / MAX_PIXEL_VALUE
 
             video_data_ground_truth = utils.generate_ground_truth_from_frames(video_stream.frames,
@@ -124,7 +124,7 @@ def main():
             container = av.open(preproc_video_filename)
             video_stream = container.streams.video[0]
             source_fps = video_stream.codec_context.framerate
-            video_data = np.asarray([np.reshape(frame.to_ndarray(format='gray'), newshape=IMG_SHAPE) for frame in
+            video_data = np.asarray([np.reshape(frame.to_ndarray(format=IMG_FORMAT), newshape=IMG_SHAPE) for frame in
                                      container.decode(video=0)]) / MAX_PIXEL_VALUE
             video_data = utils.get_every_nth_element(video_data, source_fps / FPS)
             container.seek(offset=0)

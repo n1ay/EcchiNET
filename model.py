@@ -2,7 +2,8 @@ from keras.layers import LSTM, Dense, Conv1D, Conv2D, MaxPooling1D, MaxPooling2D
 from keras.models import Sequential
 from keras_preprocessing.image import ImageDataGenerator
 
-IMG_SHAPE = [144, 256, 1]
+IMG_FORMAT = 'rgb24'
+IMG_SHAPE = [144, 256, 3]
 AUDIO_SHAPE = [2, 1024]
 
 def build_model_video():
